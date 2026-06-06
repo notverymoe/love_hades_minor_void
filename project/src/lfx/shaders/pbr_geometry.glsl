@@ -54,8 +54,8 @@ void pixelmain() {
     ));
 
     OutAlbedo   = PBRAlbedoTint*albedo;
-    OutMaterial = vec4(material.rgb, 1);
-    OutNormal   = vec4(normal.xy, PBRProperties.y + (1 - material.a)*PBRProperties.z, 1);
+    OutMaterial = vec4(material.rgb, OutAlbedo.a);
+    OutNormal   = vec4(normal.xy, PBRProperties.y + (1 - material.a)*PBRProperties.z, OutAlbedo.a);
 }
 
 #endif

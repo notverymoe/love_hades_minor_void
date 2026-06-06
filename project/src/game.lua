@@ -14,7 +14,8 @@ require("src.ecs.occluder") -- Decorate arlu with component id
 
 ---@param world arlu.World
 ---@param size number
-local function initBoxes(world, size)
+---@param texId integer
+local function initBoxes(world, size, texId)
     local hcount = 8
 
     local boxBuilder = lfx.OccluderBuilder.new():addBox(v2d(size, size))
@@ -29,7 +30,7 @@ local function initBoxes(world, size)
 
             world:spawn({
                 [lfx.Occluder.ID] = boxBuilder:build(1.0),
-                [      Sprite.ID] = Sprite.new(v2d(size,size), {r,g,b,1}),
+                [      Sprite.ID] = Sprite.new(v2d(size,size), {r,g,b,1}, texId),
                 [       Basis.ID] = Basis.new(2*size*v2d(x, y))
             })
         end
@@ -72,14 +73,8 @@ local function initLights(world, count)
 end
 
 local world = arlu.World.new()
-initBoxes(world, 6)
-initLights(world, 24)
-local playerEId = world:spawn({
-    [Light.ID] = Light.new(2, 15, {200,100,200}),
-    [Basis.ID] = Basis.new(v2d(0,0), 0, 1)
-})
-
 local projection = love.math.newTransform()
+local playerEId
 
 ---@type table<string, LFX.TexAtlas>
 local atlas = {}
@@ -95,21 +90,35 @@ function love.load()
 
     print("Loading high textures")
     atlas.hi = lfx.TexAtlasBuilder.new():loadAll("assets/materials/hi"):tryBuild()
+
+    initBoxes(world, 2, atlas.md.lookup["copper"])
+    initLights(world, 8)
+    playerEId = world:spawn({
+        --[ Light.ID] = Light.new(2, 15, {200,100,200}),
+        [ Basis.ID] = Basis.new(v2d(0,0), 0, 1),
+        [Sprite.ID] = Sprite.new(v2d(1, 1), {1,1,1}, atlas.md.lookup["player"])
+    })
 end
 
 function love.resize(w, h)
     projection:setMatrix(lovely.math.orthoProjection(love.graphics.getPixelDimensions()))
 end
 
-local vSize = 2
+local vSize = 8
 function love.update(dt)
     local player = world:get(playerEId)
     if player then
-        local basis = player[Basis.ID] --[[@as Basis]]
-        if love.keyboard.isDown("w") then basis.origin.y = basis.origin.y - 16*dt end
-        if love.keyboard.isDown("s") then basis.origin.y = basis.origin.y + 16*dt end
-        if love.keyboard.isDown("a") then basis.origin.x = basis.origin.x - 16*dt end
-        if love.keyboard.isDown("d") then basis.origin.x = basis.origin.x + 16*dt end
+        local d = v2d(0,0)
+        if love.keyboard.isDown("w") then d.y = d.y - 1 end
+        if love.keyboard.isDown("s") then d.y = d.y + 1 end
+        if love.keyboard.isDown("a") then d.x = d.x - 1 end
+        if love.keyboard.isDown("d") then d.x = d.x + 1 end
+        if d:lengthSqr() > 0 then
+            d = d:normalizeOrZero()
+            local basis = player[Basis.ID] --[[@as Basis]]
+            basis.origin   = basis.origin+ dt*3*d
+            basis.rotation = d
+        end
 
         local light = player[Light.ID] --[[@as Light]]
         if love.keyboard.isDown("q") then light.radius = math.max(  5, light.radius - 10*dt) end
@@ -140,7 +149,7 @@ function love.update(dt)
         if lights[i]:id() ~= playerEId then
             local off = i/numLights
             local basis = lights[i]:component(Basis.ID) --[[@as Basis]]
-            basis.origin = (16 + 6*(math.cos(off+love.timer.getTime())))*v2d.newRotation((i+off+love.timer.getTime())*angle)
+            basis.origin = (16 + 6*(math.cos(off+love.timer.getTime())))*v2d.newRotation((i+off+0.02*love.timer.getTime())*angle)
         end
     end
 
@@ -228,7 +237,7 @@ function love.draw()
 
         renderer:setPBRProperties(atlas.md.lookup["concrete"], 0, 0.1)
         renderer:setPBRAlbedoTint({1,1,1})
-        local floorTileSize = 2
+        local floorTileSize = 2.5
         for x=math.floor(viewMin.x/floorTileSize),math.ceil(viewMax.x/floorTileSize) do
             for y=math.floor(viewMin.y/floorTileSize),math.ceil(viewMax.y/floorTileSize) do
                 love.graphics.rectangle("fill", floorTileSize*x, floorTileSize*y, floorTileSize, floorTileSize)
@@ -243,9 +252,13 @@ function love.draw()
             local sMax   = basis.origin + hsize
 
             if lovely.math.aabbOverlap(sMin, sMax, viewMin, viewMax) then
-                renderer:setPBRProperties(atlas.md.lookup["copper"], 1, 0.1)
+                renderer:setPBRProperties(sprite.texId, 1, 0.1)
                 renderer:setPBRAlbedoTint(sprite.tint)
-                love.graphics.rectangle("fill", sMin.x, sMin.y, sprite.size.x, sprite.size.y)
+                love.graphics.push()
+                love.graphics.translate(basis.origin.x, basis.origin.y)
+                love.graphics.rotate(math.atan2(basis.rotation.y, basis.rotation.x))
+                love.graphics.rectangle("fill", -hsize.x, -hsize.y, sprite.size.x, sprite.size.y)
+                love.graphics.pop()
             end
         end
         renderer:endPassOpaque()
@@ -274,13 +287,13 @@ function love.draw()
         end
     end)
 
-    renderer:finish()
+    local sdrFinal = renderer:finish()
 
     -- Display raw accum buffer
     love.graphics.setCanvas()
     love.graphics.clear(0,0,0)
     love.graphics.setProjection(projection)
-    love.graphics.draw(renderer._rt.sdrFinal, -w/2, -h/2, 0, 1/RENDER_SCALE)
+    love.graphics.draw(sdrFinal, -w/2, -h/2, 0, 1/RENDER_SCALE)
 
     -- Draw FPS
     love.graphics.setColor(1,1,1)

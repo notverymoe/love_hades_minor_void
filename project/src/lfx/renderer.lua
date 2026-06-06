@@ -107,6 +107,7 @@ end
 ---Called to indicated the renderer is finished
 ---and to generate the final SDR image.
 ---@param self LFX.Renderer
+---@return love.Canvas
 function Renderer.finish(self)
     ------------------------------
     -- Manual to 1x1 mips
@@ -155,6 +156,9 @@ function Renderer.finish(self)
     local tmp = self._rt.expPrev
     self._rt.expPrev = self._rt.expNext
     self._rt.expNext = tmp
+
+    -- Return texture for use
+    return self._rt.sdrFinal
 end
 
 ---Starts the opaque pass. You can only have one opaque pass. It
