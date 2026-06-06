@@ -1,0 +1,9 @@
+
+PROJECT_NAME="game"
+
+LOVE_ARCH=$(uname -m)
+if [[ $LOVE_ARCH == arm* ]]; then
+    LOVE_ARCH=arm
+fi
+
+LOVE_BIN=$(dirname "$0")/bin/love_$LOVE_ARCH.AppImage

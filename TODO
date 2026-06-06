@@ -1,0 +1,67 @@
+[X] Migrate to ECS
+[X] Add HDR -> SDR Tonemapping
+[ ] Improve Occluder Mesh Data
+[X] Add height-based shadow Occluder option
+[X] Test PBR Textures
+[X] Texture Atlas Management
+[ ] Texture Atlas Batching
+[ ] Utility functions! (lovely.math.circleInRect, lovely.math.rectInRect, lfx.Occluder.newQuad(x, y, w, h))
+[X] Shadow Mask -> Shadow Texture (variable shadow colors, might be good for height occluders, might be good for blur)
+
+
+-------------------------------------------------------------------------------
+-- Render lights
+--
+-- TODO OPT
+--   We appear to be hitting an iteration/access limit. For
+--   a 17x17 grid of boxes, we're looking at a total of 289
+--   boxes. But with 250 lights on screen, that becomes 72,250
+--   iterations and 72,250 bounds checks. It works out to about
+--   18ns per iter or 1.3ms per frame.
+--
+--   At 144hz that's 19% of our frame budget. Rendering the
+--   occluders themselves takes about the same amount of time,
+--   another 19%. The rest of the light accumulation step takes
+--   twice that, eating up 77% of our budget on shadow projection.
+--
+--   Obviously, we're not likely to have 250 lights onscreen. Though
+--   currently we don't have a method to efficiently lookup entities
+--   spatially and will have to iterate all occluders to gather or
+--   exclude them. Additionally it presents a clear limit to the
+--   number of iterations we can complete in a frame, including with
+--   updates. We should investigate performance improvements with the ECS.
+--   
+--   Rendering Improvements
+--     - Spatial Lookup Grid
+--
+--   ECS Improvements
+--     - (?) Queries prefetch columns and index them sequentially
+--     - (?) Queries should have a fast random or filtered lookup   
+--         - This is to work in tandem with the spatial lookup grid
+--   
+-- Performance Budget
+--    - 13ms Target Frametime (83.33ms)
+--        - 60fps target, 20% variance buffer
+--            - 75fps Effective Target
+--            - ~13ms Frame Time
+--        - Breakdown Targets
+--            - 8ms Render (62%)
+--            - 5ms Update (38%)
+--    - 6GB RAM Target
+--        - Most systems have at least 8GB of ram (40% have 16GB, Steam Hardware Survey)
+--        - Assume OS uses ~2GB
+--    - 4GB VRAM Target
+--        - Most systems have at least 6GB of vram
+--            - 40% have 8GB, Steam Hardware Survey
+--            - NV RTX2060 has 6GB
+--            - AMD RX6600 has 8GB
+--        - Assume OS uses ~2GB (windows)
+--    - Screen Resolution 4k (3840 x 2160)
+--        -  720p - 3.0x Supersampling
+--        - 1080p - 2.0x Supersampling
+--        - 1440p - 1.5x Supersampling
+--        - 2160p - Native
+--             - 4k Users likely to have higher than target specs
+--    - CPU Assumption
+--        - 6 Threads (8 thread machine, assume 2 being used by system)
+-------------------------------------------------------------------------------

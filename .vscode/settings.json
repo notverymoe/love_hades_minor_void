@@ -1,0 +1,23 @@
+{
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.runtime.pathStrict": true,
+    "Lua.workspace.checkThirdParty": false,
+    "Lua.workspace.library": [
+        "${workspaceFolder}/types/love2d",
+        "${workspaceFolder}/project",
+    ],
+    "Lua.workspace.ignoreDir": [
+        ".git/",
+        ".vscode/",
+        "hidden/**",
+        "scripts/**",
+    ],
+    "Lua.diagnostics.disable": [
+        "unused-function"
+    ],
+    "shader-validator.glsl.enabled": true,
+    "shader-validator.wgsl.enabled": false,
+    "shader-validator.hlsl.enabled": false,
+    "shader-validator.glsl.spirvVersion": "SPIRV1_6",
+    "shader-validator.glsl.targetClient": "OpenGL450",
+}

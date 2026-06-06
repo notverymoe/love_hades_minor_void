@@ -1,0 +1,42 @@
+# Performance Budget
+
+- Screen: 1440p @ 75hz SDR
+- Ram: 4GiB System + 4GiB Video 
+- CPU: Up to 6 logical cores availiable
+
+## Breakdown
+- 75hz Refresh Rate
+    - Maintains 60Hz with a 20% dip
+    - 13ms Frame Time
+        - 8ms Render (62%, Dispatch + GPU)
+        - 5ms Update (38%)
+- 1440p Screen Resolution
+    - Middle ground between 1080p and 4K
+    - 1080p gets a 1.5x SuperSample
+    - 2160p systems will have beefier specs
+- Standard Dynamic Range
+    - Love2D doesn't support HDR windows (yet?)
+- 6GiB System Ram
+    - Steam Hardware Survery: 40% of users have 16GiB
+    - ROG Ally, SteamDeck, Legion Go, MSI Claw
+        - Up to 8GB (16GiB split memory, ie. 8/8)
+    - Laptops, 8GB Ram seems standard
+    - Switch 2, 9GiB split memory (ie. 4.5GiB/4.5GiB, after OS reserve)
+    - Most non-budget phones share 8-12GiB between system and video
+    - Assume 8GiB Setup w/2GiB in use for OS/Other
+- 5GiB Video Ram
+    - Steam Hardware Survery: 40% of users have 8GiB
+    - NV GTX 1070, RTX 2070, RTX 3060 Ti, RTX 4060 have 8GB
+    - AMD RX470 (8gb), RX570 (8gb), RX5700, RX6600, RX7400 have 8GB
+    - ROG Ally, SteamDeck, Legion Go, MSI Claw
+        - Up to 8GB (split 16GiB system memory 8/8)
+    - Laptops, 8GB VRam seems standard
+    - Switch 2, 9GiB split memory (ie. 4.5GiB/4.5GiB, after OS reserve)
+    - Most non-budget phones share 8-12GiB between system and video
+    - Assume 6iB Setup w/10-20% overhead for OS/Other/Undercalculation
+- CPU Assumptions
+    - 6 Threads / Logical Cores Availiable
+        - 8 Thread system, 2 Threads in use by OS/Other
+        - Steam Hardware Survery says 6 physical cores w/SMT is the most common.
+        - Threading will be hard to do/find a use for here.
+            - Maybe texture loading/processing?
