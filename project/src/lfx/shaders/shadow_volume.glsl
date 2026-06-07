@@ -39,9 +39,9 @@ vec2 pointToWorld(vec2 v) {
 }
 
 vec2 projectOntoSegment(
-    vec2 pnt,
-    vec2 segStart,
-    vec2 segDir,
+    vec2  pnt,
+    vec2  segStart,
+    vec2  segDir,
     float segLen
 ) {
     float dp = clamp(dot(segDir, pnt - segStart), 0, segLen);
@@ -51,8 +51,8 @@ vec2 projectOntoSegment(
 float projectPoint(
     vec2  lightOrigin, 
     float lightRadius,
-    vec2 segStart,
-    vec2 segLight
+    vec2  segStart,
+    vec2  segLight
 ) {
     vec2 ab = segLight - lightOrigin;
     float projFactor = lightRadius * length(ab);
@@ -63,46 +63,46 @@ float projectPoint(
 float projectShadowPointsMulLimit(
     vec2  lightOrigin, 
     float lightRadius,
-    vec2 segStart, 
-    vec2 segdir_a, float seglen_a, 
-    vec2 segdir_b, float seglen_b
+    vec2  segStart, 
+    vec2  segDirA, float segLenA, 
+    vec2  segDirB, float segLenB
 ) {
-    vec2 segLightA = projectOntoSegment(lightOrigin, segStart, segdir_a, seglen_a);
-    vec2 segLightB = projectOntoSegment(lightOrigin, segStart, segdir_b, seglen_b);
+    vec2 segLightA = projectOntoSegment(lightOrigin, segStart, segDirA, segLenA);
+    vec2 segLightB = projectOntoSegment(lightOrigin, segStart, segDirB, segLenB);
     float multA = projectPoint(lightOrigin, lightRadius, segStart, segLightA);
     float multB = projectPoint(lightOrigin, lightRadius, segStart, segLightB);
     return max(multA, multB);
 }
 
-vec3 shadowMainInf(vec3 lightOrigin, float lightRadius, int segment_id, int quadtri_id, vec3 vertex_world) {
+vec3 shadowMainInf(vec3 lightOrigin, float lightRadius, int segmentId, int quadTriId, vec3 vertexWorld) {
 
-    float len_a = segments[segment_id].len2;
+    float lenA = segments[segmentId].len2;
 
-    vec2 dir_a = dirToWorld(float[]( 1, 1,-1, 1,-1,-1)[quadtri_id]*segments[segment_id].dir2);
+    vec2 dirA = dirToWorld(float[]( 1, 1,-1, 1,-1,-1)[quadTriId]*segments[segmentId].dir2);
 
-    float len_b = float[](
-        segments[segment_id].len1, segments[segment_id].len1, segments[segment_id].len3,
-        segments[segment_id].len1, segments[segment_id].len3, segments[segment_id].len3
-    )[quadtri_id];
+    float lenB = float[](
+        segments[segmentId].len1, segments[segmentId].len1, segments[segmentId].len3,
+        segments[segmentId].len1, segments[segmentId].len3, segments[segmentId].len3
+    )[quadTriId];
 
-    vec2 dir_b = dirToWorld(vec2[](
-        -segments[segment_id].dir1, -segments[segment_id].dir1,  segments[segment_id].dir3,
-        -segments[segment_id].dir1,  segments[segment_id].dir3,  segments[segment_id].dir3
-    )[quadtri_id]);
+    vec2 dirB = dirToWorld(vec2[](
+        -segments[segmentId].dir1, -segments[segmentId].dir1,  segments[segmentId].dir3,
+        -segments[segmentId].dir1,  segments[segmentId].dir3,  segments[segmentId].dir3
+    )[quadTriId]);
 
-    vec3  from_light     = vertex_world - lightOrigin;
-    float from_light_len = length(from_light);
-    vec3  from_light_dir = from_light/from_light_len;
+    vec3  fromLight    = vertexWorld - lightOrigin;
+    float fromLightLen = length(fromLight);
+    vec3  fromLightDir = fromLight/fromLightLen;
 
     float mult = max(1.01, projectShadowPointsMulLimit(
         lightOrigin.xy,
         lightRadius*1.05,
-        vertex_world.xy,
-        dir_a, len_a,
-        dir_b, len_b
-    )*max(from_light_len, 1e-4));//from_light_dir.z >= 0 ? multLim :  min(multCast, multLim));
+        vertexWorld.xy,
+        dirA, lenA,
+        dirB, lenB
+    )*max(fromLightLen, 1e-4));//fromLightDir.z >= 0 ? multLim :  min(multCast, multLim));
 
-    return vertex_world + vec3(from_light_dir.xy, from_light_dir.z)*mult;
+    return vertexWorld + vec3(fromLightDir.xy, fromLightDir.z)*mult;
 }
 
 void vertexmain() {
@@ -121,7 +121,7 @@ void vertexmain() {
     // D1         D3
     //
     // OA = Original A
-    // OB = Original B
+    // OB = Original BvertexWorldFinal
     // CA = Cast A
     // CB = Cast B
     // =>  = Dir 2 / Segment
@@ -133,32 +133,32 @@ void vertexmain() {
     //
     ////////////////////
 
-    int quadtri_id = love_VertexID % 6;
-    int segment_id = love_VertexID / 6;
+    int quadTriId = love_VertexID % 6;
+    int segmentId = love_VertexID / 6;
 
-    vec2 vertex_world = pointToWorld(vec2[](
-        segments[segment_id].pntA, segments[segment_id].pntA, segments[segment_id].pntB,
-        segments[segment_id].pntA, segments[segment_id].pntB, segments[segment_id].pntB
-    )[quadtri_id]);
+    vec2 vertexWorld = pointToWorld(vec2[](
+        segments[segmentId].pntA, segments[segmentId].pntA, segments[segmentId].pntB,
+        segments[segmentId].pntA, segments[segmentId].pntB, segments[segmentId].pntB
+    )[quadTriId]);
     
-    vec2 normal      = dirToWorld(vec2(-segments[segment_id].dir2.y, segments[segment_id].dir2.x));
-    vec2 light_delta = LightOrigin.xy - vertex_world.xy;
+    vec2 normal     = dirToWorld(vec2(-segments[segmentId].dir2.y, segments[segmentId].dir2.x));
+    vec2 lightDelta = LightOrigin.xy - vertexWorld.xy;
 
-    vec4 vertex_world_final = vec4(vertex_world.xy, max(CasterHeight, 0), 1);
-    if ((float[](0,1,1, 0,1,0)[quadtri_id] != 0) && (dot(normal, light_delta) <= 0)) {
-        vertex_world_final = vec4(
+    vec4 vertexWorldFinal = vec4(vertexWorld.xy, max(CasterHeight, 0), 1);
+    if ((float[](0,1,1, 0,1,0)[quadTriId] != 0) && (dot(normal, lightDelta) <= 0)) {
+        vertexWorldFinal = vec4(
             shadowMainInf(
                 LightOrigin,
                 LightRadius,
-                segment_id,
-                quadtri_id,
-                vec3(vertex_world, max(CasterHeight, 0))
+                segmentId,
+                quadTriId,
+                vec3(vertexWorld, max(CasterHeight, 0))
             ),
             1
         );
     } 
-    height = vertex_world_final.z;
-    love_Position = ProjectionMatrix * ViewMatrix * vertex_world_final;
+    height = vertexWorldFinal.z;
+    love_Position = ProjectionMatrix * ViewMatrix * vertexWorldFinal;
 }
 
 #endif

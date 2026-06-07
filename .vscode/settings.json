@@ -15,21 +15,4 @@
     "Lua.diagnostics.disable": [
         "unused-function"
     ],
-    "shader-validator.glsl.enabled": true,
-    "shader-validator.wgsl.enabled": false,
-    "shader-validator.hlsl.enabled": false,
-    "shader-validator.glsl.spirvVersion": "SPIRV1_6",
-    "shader-validator.glsl.targetClient": "OpenGL450",
-    "spellright.language": [
-        "English (Australian)"
-    ],
-    "spellright.documentTypes": [
-        "markdown",
-        "latex",
-        "plaintext"
-    ],
-    "cSpell.words": [
-        "arlu",
-        "shrimpvec"
-    ],
 }

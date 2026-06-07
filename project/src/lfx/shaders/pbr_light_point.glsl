@@ -1,6 +1,7 @@
 // Copyright 2026 Natalie Baker // AGPLv3 //
 
-#define M_PI 3.1415926535897932384626433832795
+const float M_PI     = 3.1415926535897932384626433832795;
+const float M_PI_INV = 0.3183098861837906715377675267450;
 
 uniform mat4 ViewMatrix;
 
@@ -21,9 +22,9 @@ varying vec2 FragmentTexCoord;
 layout(location = 0) in vec2 VertexPosition;
 
 void vertexmain() {
-    vec4 vertex_position = TransformMatrix * vec4(VertexPosition, 0, 1);
-    FragmentPosition = vertex_position.xy;
-    love_Position = ProjectionMatrix * ViewMatrix * vertex_position;
+    vec4 vertexPosition = TransformMatrix * vec4(VertexPosition, 0, 1);
+    FragmentPosition = vertexPosition.xy;
+    love_Position = ProjectionMatrix * ViewMatrix * vertexPosition;
     FragmentTexCoord = 0.5+0.5*love_Position.xy;
     FragmentTexCoord.y = 1-FragmentTexCoord.y;
 }
@@ -53,7 +54,7 @@ vec3 termFresnel(vec3 dirView, vec3 dirHalf, vec3 albedo, float metalness) {
 }
 
 // GGX Normal Distribution
-float termNormalDistibution(float dpNH, float alpha) {
+float termNormalDistribution(float dpNH, float alpha) {
     float alpha2 = alpha*alpha;
     float dpNH2 = dpNH*dpNH;
     float denom = dpNH2 * (alpha2-1) + 1;
@@ -82,7 +83,7 @@ vec3 termSpecular(vec3 dirView, vec3 dirLight, vec3 dirNormal, vec3 dirHalf, flo
 
     float dpNL = dot(dirNormal, dirLight);
     float dpNV = dot(dirNormal, dirView );
-    // Cook-torrence only correct for DP > 0, prevent issues
+    // Cook-Torrance only correct for DP > 0, prevent issues
     // with nearly 0 dot products where the camera or light
     // is close to 90 degrees from the normal.
     if ((dpNL < 1e-4) || (dpNV < 1e-4)) {
@@ -90,7 +91,7 @@ vec3 termSpecular(vec3 dirView, vec3 dirLight, vec3 dirNormal, vec3 dirHalf, flo
     }
 
     float dpNH = max(dot(dirNormal, dirHalf ), 0);
-    float d = termNormalDistibution(dpNH, alpha);
+    float d = termNormalDistribution(dpNH, alpha);
     float g = termGeometricShadowing(dpNV, dpNL, roughness);
     return (f*d*g)/(4*dpNL*dpNV);
 }
@@ -110,7 +111,7 @@ void pixelmain() {
     float height = sampN.z;
     vec3  albedo = sampA.rgb;
     float alpha  = sampA.a;
-    float occlusion = sampM.r; // TODO
+    float occlusion = sampM.r;
     float roughness = sampM.g;
     float metalness = sampM.b;
 
@@ -142,10 +143,10 @@ void pixelmain() {
     float ambientSplit = 0.1;
 
     vec3 kd = (1-ambientSplit)*(1-fresnel) * (1-metalness);
-    vec3 diffuse = max(kd*(albedo / M_PI), 0.0);
+    vec3 diffuse = max(kd*albedo*M_PI_INV, 0.0);
 
     vec3 ka = ambientSplit*(1-fresnel)*(1-metalness);
-    vec3 ambient = ka*(albedo / M_PI);
+    vec3 ambient = ka*albedo*M_PI_INV;
 
     float incidence = max(dot(normal, lightDir), 0.0);
     vec3   directLighting = incidence*lightIntensity*(diffuse+specular);
