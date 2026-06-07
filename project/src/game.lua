@@ -30,7 +30,7 @@ local function initBoxes(world, size, texId)
 
             world:spawn({
                 [lfx.Occluder.ID] = boxBuilder:build(1.0),
-                [      Sprite.ID] = Sprite.new(v2d(size,size), {r,g,b,1}, texId),
+                [      Sprite.ID] = Sprite.new(v2d(size,size), {r,g,b,1}, 1.0, texId),
                 [       Basis.ID] = Basis.new(2*size*v2d(x, y))
             })
         end
@@ -55,7 +55,7 @@ local function initLights(world, count)
 
         world:spawn({
             [Light.ID] = Light.new(
-                1.5,
+                2.5,
                 8 + (i*37 % 128)/128 * 12,
                 (function()
                     local ra,ga,ba = unpack(colours[1+((   i-1) % #colours)])
@@ -95,8 +95,9 @@ function love.load()
     initLights(world, 8)
     playerEId = world:spawn({
         --[ Light.ID] = Light.new(2, 15, {200,100,200}),
-        [ Basis.ID] = Basis.new(v2d(0,0), 0, 1),
-        [Sprite.ID] = Sprite.new(v2d(1, 1), {1,1,1}, atlas.md.lookup["player"])
+        [       Basis.ID] = Basis.new(v2d(0,0), 0, 1),
+        [      Sprite.ID] = Sprite.new(v2d(1, 1), {1,1,1}, 1.8, atlas.md.lookup["player"]),
+        [lfx.Occluder.ID] = lfx.OccluderBuilder.new():addBox(v2d(0.3, 0.3), v2d(-0.05, 0)):addBox(v2d(0.2, 0.7)):build(1.7), -- Make shadow lower so it renders under the player
     })
 end
 
@@ -173,7 +174,7 @@ local function gatherLightsAndOccluders(renderer)
     --   - Temporal-Coherence
     --       - Store previous frame lights
     --       - Only re-run add/remove on lights and occluders that have moved
-    --           - If light is not onscreen, mark dirty instead of recalc
+    --           - If light is not onscreen, mark dirty instead of recalculating
     --   - Spatial-Partitioning
     --       - We should create a grid that lists entities in that grid
     --       - Cross reference with the occluder query based on the overlap
@@ -233,6 +234,7 @@ function love.draw()
 
     -- Render scene
     lovely.graphics.isolate(function()
+
         renderer:startPassOpaque(atlas.md)
 
         renderer:setPBRProperties(atlas.md.lookup["concrete"], 0, 0.1)
@@ -247,17 +249,17 @@ function love.draw()
         for _,entity in world:query({[Sprite.ID]=1, [Basis.ID]=1}):iter(world) do
             local sprite = entity:component(Sprite.ID) --[[@as Sprite]]
             local basis  = entity:component(Basis.ID) --[[@as Basis ]]
-            local hsize  = sprite.size*0.5
-            local sMin   = basis.origin - hsize
-            local sMax   = basis.origin + hsize
+            local hSize  = sprite.size*0.5
+            local sMin   = basis.origin - hSize
+            local sMax   = basis.origin + hSize
 
             if lovely.math.aabbOverlap(sMin, sMax, viewMin, viewMax) then
-                renderer:setPBRProperties(sprite.texId, 1, 0.1)
+                renderer:setPBRProperties(sprite.texId, sprite.height, 0.1)
                 renderer:setPBRAlbedoTint(sprite.tint)
                 love.graphics.push()
                 love.graphics.translate(basis.origin.x, basis.origin.y)
                 love.graphics.rotate(math.atan2(basis.rotation.y, basis.rotation.x))
-                love.graphics.rectangle("fill", -hsize.x, -hsize.y, sprite.size.x, sprite.size.y)
+                love.graphics.rectangle("fill", -hSize.x, -hSize.y, sprite.size.x, sprite.size.y)
                 love.graphics.pop()
             end
         end
@@ -289,7 +291,7 @@ function love.draw()
 
     local sdrFinal = renderer:finish()
 
-    -- Display raw accum buffer
+    -- Display raw accumulation buffer
     love.graphics.setCanvas()
     love.graphics.clear(0,0,0)
     love.graphics.setProjection(projection)

@@ -117,7 +117,13 @@ void pixelmain() {
     float shadowHeight       = sampS.r;
     float shadowHeightCaster = sampS.g;
     float shadowMask         = 1-sign(shadowHeightCaster);
-    float shadow = shadowHeight > height ? (0.25 + shadowMask*0.75) : 1;
+
+    vec2 shadowTerms = shadowHeight > height 
+        ? vec2(
+            0.5+shadowMask*0.5, // Indirect
+            0.1+shadowMask*0.9  // Direct
+        ) 
+        : vec2(1);
 
     vec3 viewDir = vec3(0,0,1);
 
@@ -126,19 +132,28 @@ void pixelmain() {
 
     float lightDist = length(lightDelta);
     vec3 lightDir   = lightDelta/lightDist;
-    vec3 lightIntensity = shadow*LightColor*lightAttenuation(lightDist, LightRadius);
+    vec3 lightIntensity = LightColor*lightAttenuation(lightDist, LightRadius);
 
     vec3 halfDir = normalize(lightDir + viewDir);
 
-    vec3 fresnel  = termFresnel(viewDir, halfDir, albedo, metalness); 
-    vec3 specular = termSpecular(viewDir, lightDir, normal, halfDir, roughness, metalness, fresnel);
-    
-    vec3 kd = (1-fresnel) * (1-metalness);
-    vec3 diffuse = kd*(albedo / M_PI);
+    vec3 fresnel  = max(termFresnel(viewDir, halfDir, albedo, metalness), 0.0); 
+    vec3 specular = max(shadowTerms.y*termSpecular(viewDir, lightDir, normal, halfDir, roughness, metalness, fresnel), 0.0);
+
+    float ambientSplit = 0.1;
+
+    vec3 kd = (1-ambientSplit)*(1-fresnel) * (1-metalness);
+    vec3 diffuse = max(kd*(albedo / M_PI), 0.0);
+
+    vec3 ka = ambientSplit*(1-fresnel)*(1-metalness);
+    vec3 ambient = ka*(albedo / M_PI);
 
     float incidence = max(dot(normal, lightDir), 0.0);
-    OutAccum = vec4(incidence*lightIntensity*(diffuse+specular), alpha);
-    //OutAccum = vec4(vec3(incidence), 1); // Seems to be a XY quadrant bias? Mipmap seem to be a factor...
+    vec3   directLighting = incidence*lightIntensity*(diffuse+specular);
+    vec3 indirectLighting = occlusion*lightIntensity*ambient;
+    OutAccum = vec4(
+        shadowTerms.x*indirectLighting + shadowTerms.y*directLighting, 
+        alpha
+    );
 }
 
 #endif
