@@ -121,26 +121,8 @@ function love.update(dt)
             basis.rotation = d
         end
 
-        local light = player[Light.ID] --[[@as Light]]
-        if love.keyboard.isDown("q") then light.radius = math.max(  5, light.radius - 10*dt) end
-        if love.keyboard.isDown("e") then light.radius = math.min(200, light.radius + 10*dt) end
-
-        if love.keyboard.isDown("r") then light.height = math.max(0, light.height - dt) end
-        if love.keyboard.isDown("f") then light.height = math.min(5, light.height + dt) end
-
-        if love.keyboard.isDown("t") then 
-            light.intensity[1] = math.max(1, light.intensity[1]/(1+3*dt)) 
-            light.intensity[2] = math.max(1, light.intensity[2]/(1+3*dt)) 
-            light.intensity[3] = math.max(1, light.intensity[3]/(1+3*dt)) 
-        end
-        if love.keyboard.isDown("g") then 
-            light.intensity[1] = math.min(10000, light.intensity[1]*(1+3*dt)) 
-            light.intensity[2] = math.min(10000, light.intensity[2]*(1+3*dt)) 
-            light.intensity[3] = math.min(10000, light.intensity[3]*(1+3*dt)) 
-        end
-
-        if love.keyboard.isDown("x") then vSize = math.max(1,  vSize - 8*dt) end
-        if love.keyboard.isDown("c") then vSize = math.min(60, vSize + 8*dt) end
+        if love.keyboard.isDown("q") then vSize = math.max(1,  vSize - 8*dt) end
+        if love.keyboard.isDown("e") then vSize = math.min(60, vSize + 8*dt) end
     end
 
     local lights = world:query({[Light.ID]=1, [Basis.ID]=1}):collect(world)

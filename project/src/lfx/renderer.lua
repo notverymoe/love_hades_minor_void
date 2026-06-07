@@ -144,8 +144,10 @@ function Renderer.finish(self)
     love.graphics.setShader(Renderer.SHADERS.Tonemap)
 
     Renderer.SHADERS.Tonemap:send("TexExposure", self._rt.expNext)
-    Renderer.SHADERS.Tonemap:send("TexAccum", self._rt.hdrAccum)
+    Renderer.SHADERS.Tonemap:send("TexAccum",   self._rt.hdrAccum)
     Renderer.SHADERS.Tonemap:send("MidtoneAdjustment", 1)
+    Renderer.SHADERS.Tonemap:send("ExposureMinEV",    -4)
+    Renderer.SHADERS.Tonemap:send("ExposureFactor", 0.12)
 
     love.graphics.drawFromShader("fan", 4)
 
